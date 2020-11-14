@@ -29,12 +29,21 @@ type Builder struct {
 	ResponseBodyCT ContentType
 }
 
+// ResponseInfo struct
+type ResponseInfo struct {
+	Status     string      // e.g. "200 OK"
+	StatusCode int         // e.g. 200
+	Header     http.Header // map[string]string
+}
+
 // Perform will try to perform http request for the param set by the builder
-func (a Builder) Perform() (int, error) {
+func (a Builder) Perform() (ResponseInfo, error) {
+	r := ResponseInfo{}
+
 	// Create Request
 	req, err := http.NewRequest(a.Method, a.URL, nil)
 	if err != nil {
-		return 0, err
+		return r, err
 	}
 
 	// Add headers
@@ -55,7 +64,7 @@ func (a Builder) Perform() (int, error) {
 			err = errors.New("Unknow Content Type")
 		}
 		if err != nil {
-			return 0, err
+			return r, err
 		}
 		req.ContentLength = int64(len(data))
 		req.Body = ioutil.NopCloser(bytes.NewReader(data))
@@ -64,14 +73,19 @@ func (a Builder) Perform() (int, error) {
 	// Perform request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, err
+		return r, err
 	}
+
+	// Fill ResponseInfo
+	r.StatusCode = resp.StatusCode
+	r.Status = resp.Status
+	r.Header = resp.Header
 
 	// Read Response body
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, err
+		return r, err
 	}
 
 	// if we were supposed to retrieve an output, we try to unmarshal it
@@ -84,9 +98,9 @@ func (a Builder) Perform() (int, error) {
 			err = errors.New("Unknow Content Type")
 		}
 		if err != nil {
-			return resp.StatusCode, err
+			return r, err
 		}
 	}
 
-	return resp.StatusCode, nil
+	return r, nil
 }
