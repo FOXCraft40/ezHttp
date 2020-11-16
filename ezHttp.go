@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -31,9 +32,10 @@ type Builder struct {
 
 // ResponseInfo struct
 type ResponseInfo struct {
-	Status     string      // e.g. "200 OK"
-	StatusCode int         // e.g. 200
-	Header     http.Header // map[string]string
+	Status     string        // e.g. "200 OK"
+	StatusCode int           // e.g. 200
+	Header     http.Header   // map[string]string
+	BulkBody   io.ReadCloser // used for debug
 }
 
 // Perform will try to perform http request for the param set by the builder
@@ -80,6 +82,7 @@ func (a Builder) Perform() (ResponseInfo, error) {
 	r.StatusCode = resp.StatusCode
 	r.Status = resp.Status
 	r.Header = resp.Header
+	r.BulkBody = resp.Body
 
 	// Read Response body
 	defer resp.Body.Close()
