@@ -35,7 +35,7 @@ type ResponseInfo struct {
 	Status     string        // e.g. "200 OK"
 	StatusCode int           // e.g. 200
 	Header     http.Header   // map[string]string
-	BulkBody   io.ReadCloser // used for debug
+	BodyReader io.ReadCloser // used for debug
 }
 
 // Perform will try to perform http request for the param set by the builder
@@ -82,7 +82,7 @@ func (a Builder) Perform() (ResponseInfo, error) {
 	r.StatusCode = resp.StatusCode
 	r.Status = resp.Status
 	r.Header = resp.Header
-	r.BulkBody = resp.Body
+	r.BodyReader = resp.Body
 
 	// Read Response body
 	defer resp.Body.Close()
