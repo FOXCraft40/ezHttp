@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
-	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -32,10 +31,10 @@ type Builder struct {
 
 // ResponseInfo struct
 type ResponseInfo struct {
-	Status     string        // e.g. "200 OK"
-	StatusCode int           // e.g. 200
-	Header     http.Header   // map[string]string
-	BodyReader io.ReadCloser // used for debug
+	Status     string      // e.g. "200 OK"
+	StatusCode int         // e.g. 200
+	Header     http.Header // map[string]string
+	BulkBody   []byte      // used for debug
 }
 
 // Perform will try to perform http request for the param set by the builder
@@ -82,11 +81,10 @@ func (a Builder) Perform() (ResponseInfo, error) {
 	r.StatusCode = resp.StatusCode
 	r.Status = resp.Status
 	r.Header = resp.Header
-	r.BodyReader = resp.Body
 
 	// Read Response body
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	r.BulkBody, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return r, err
 	}
@@ -94,9 +92,9 @@ func (a Builder) Perform() (ResponseInfo, error) {
 	// if we were supposed to retrieve an output, we try to unmarshal it
 	if a.ResponseBody != nil {
 		if a.ResponseBodyCT == JSON {
-			err = json.Unmarshal(data, a.ResponseBody)
+			err = json.Unmarshal(r.BulkBody, a.ResponseBody)
 		} else if a.ResponseBodyCT == XML {
-			err = xml.Unmarshal(data, a.ResponseBody)
+			err = xml.Unmarshal(r.BulkBody, a.ResponseBody)
 		} else {
 			err = errors.New("Unknow Content Type")
 		}
